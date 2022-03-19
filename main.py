@@ -7,18 +7,17 @@ import sklearn as sk
 import pandas as pd
 from sklearn.feature_selection import SelectKBest, mutual_info_classif
 from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
-from sklearn.tree import DecisionTreeClassifier
+
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
-from sklearn.tree import export_graphviz
+from sklearn import svm
 from six import StringIO
-from IPython.display import Image
-import pydotplus
+
+
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
-from sklearn import tree , ensemble
-from sklearn.ensemble import RandomForestRegressor
+
 
 
 df = pd.read_csv("train.csv", )
@@ -46,48 +45,35 @@ i = mdlsel.get_support()
 data2 = pd.DataFrame(mdlsel.transform(X), columns = X.columns.values[i])
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-# Create Decision Tree classifer object
-clf = DecisionTreeClassifier(max_depth = 4)
 
-# Train Decision Tree Classifer
-clf = clf.fit(X_train,y_train)
+clf = svm.SVC(kernel='linear')
 
+clf.fit(X_train, y_train)
 
-
-#Predict the response for test dataset
 y_pred = clf.predict(X_test)
 
-dot_data = StringIO()
-export_graphviz(clf, out_file=dot_data,
-                filled=True, rounded=True,
-                special_characters=True,feature_names = X.columns,class_names=['0','1'])
-graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
-graph.write_png('titanic.png')
-Image(graph.create_png())
+scores = cross_val_score(clf, X, y, cv=5)
 
-print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Linear accuracy = %0.2f" % (scores.mean()))
 
-kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+clf1 = svm.SVC(kernel='poly', degree=2)
+clf1.fit(X_train, y_train)
 
-cnt = 1
-# split()  method generate indices to split data into training and test set.
-for train_index, test_index in kf.split(X, y):
-    print(f'Fold:{cnt}, Train set: {len(train_index)}, Test set:{len(test_index)}')
-    cnt+=1
+y_pred1 = clf1.predict(X_test)
 
-score = cross_val_score(tree.DecisionTreeClassifier(random_state= 42), X, y, cv= kf, scoring="accuracy")
-print(f'Scores for each fold are: {score}')
-print(f'Average score: {"{:.2f}".format(score.mean())}')
+scores1 = cross_val_score(clf1, X, y, cv=5)
 
-rf = RandomForestRegressor(n_estimators = 1000, random_state = 42)
-# Train the model on training data
-rf.fit(X_train, y_train)
+print("Polynomial accuracy = %0.2f" % (scores1.mean()))
 
-predictions = rf.predict(X_test)
+svclassifier = svm.SVC(kernel='rbf')
+svclassifier.fit(X_train, y_train)
 
-score = cross_val_score(ensemble.RandomForestClassifier(random_state= 42), X, y, cv= kf, scoring="accuracy")
-print(f'Scores for each fold are: {score}')
-print(f'Average score: {"{:.2f}".format(score.mean())}')
+y_pred2 = svclassifier.predict(X_test)
+
+scores2 = cross_val_score(svclassifier, X, y, cv=5)
+
+print("RBF accuracy = %0.2f" % (scores2.mean()))
+
 
 
 
